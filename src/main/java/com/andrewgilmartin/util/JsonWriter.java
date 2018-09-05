@@ -11,11 +11,16 @@ import java.util.LinkedList;
  * A helper class to manually write out a JSON representation of a data
  * structure. For example, the JSON
  *
- * {@code { "a": "b", "c": [ 1, 2 ], "d": 3 } }
+ * {@code 
+ * 
+ * { "a": "b", "c": [ 1, 2 ], "d": 3 } 
+ * 
+ * }
  *
  * is created with
  *
  * {@code
+ * 
  * JsonWriter b = new JsonWriter(System.out);
  * b
  *  .hash()
@@ -27,6 +32,7 @@ import java.util.LinkedList;
  *          .end()
  *      .value("d",3)
  *  .end();
+ * 
  * }
  */
 public class JsonWriter implements AutoCloseable {

@@ -27,8 +27,20 @@ import com.andrewgilmartin.slack.SlackResponseBase;
  *
  * {@code
  *
- * ssh -NR 9090:localhost:9090 remote-user@remote-host &
- * tcp-tunnel 9080 localhost 9090 &
+ * # tunnel connections to REMOTE-HOST:9090 to localhost:9080
+ * ssh -NR 9090:localhost:9080 REMOTE-USER@REMOTE-HOST &
+ *
+ * # show incoming and outgoing data between localhost:9080 and localhost:9090
+ * java \
+ *     -classpath $HOME/.m2/repository/soap/soap/2.3/soap-2.3.jar
+ *     org.apache.soap.util.net.TcpTunnelGui
+ *     9080 localhost 9090 &
+ *
+ * # run the Slack app as a standalone server listening on port 9090
+ * java \
+ *     -Dcom.andrewgilmartin.incidentresponse.IncidentResponseSlackApp.verificationToken=XXX \
+ *     -jar target/incidentresponse1-1.0-SNAPSHOT.jar \
+ *     9090
  *
  * }
  */

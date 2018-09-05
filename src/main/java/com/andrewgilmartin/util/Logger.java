@@ -3,6 +3,11 @@ package com.andrewgilmartin.util;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 
+/**
+ * Simple logger that wraps java.util.logger.Logger with message parameters and
+ * formatting. It is the "little brother" to deeper and refined implementation
+ * elsewhere.
+ */
 public class Logger {
 
     private final java.util.logging.Logger logger;

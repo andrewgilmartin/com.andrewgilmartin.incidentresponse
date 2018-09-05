@@ -70,6 +70,8 @@ public class Message {
         int begin = NAN;
         String t1 = null;
 
+        // looking for [ id ] ( text | "!" status | "<" user-id "|" user-name ">" )*
+        
         PARSE:
         for (;;) {
             char c = i < l ? m[i++] : EOL;

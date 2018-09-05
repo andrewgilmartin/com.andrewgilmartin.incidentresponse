@@ -38,10 +38,6 @@ public class Status implements Comparable<Status> {
         return "!"+name;
     }
     
-    public static Status valueOf(String name) {
-        return name != null ? new Status(name, Color.BLUE, 1, false) : null;
-    }
-
     @Override
     public int hashCode() {
         int hash = 7;

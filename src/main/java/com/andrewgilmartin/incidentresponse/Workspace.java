@@ -41,7 +41,7 @@ public class Workspace implements Serializable {
                 description,
                 creator,
                 assignments,
-                status != null ? status : defaultIntitialStatus
+                status != null ? status : defaultIntitialStatus // TODO ensure that status is in the available statuses
         );
         tasks.add(task);
         return task;
