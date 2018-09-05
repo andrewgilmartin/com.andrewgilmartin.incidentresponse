@@ -27,8 +27,8 @@ import com.andrewgilmartin.slack.SlackResponseBase;
  *
  * {@code
  *
- * ssh -NR 9090:localhost:9090 ajg@ace.andrewgilmartin.com
- * tcp-tunnel 9080 localhost 9090
+ * ssh -NR 9090:localhost:9090 remote-user@remote-host &
+ * tcp-tunnel 9080 localhost 9090 &
  *
  * }
  */
