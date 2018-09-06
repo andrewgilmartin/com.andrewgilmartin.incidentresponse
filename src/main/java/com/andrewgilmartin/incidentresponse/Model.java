@@ -5,9 +5,11 @@ import com.andrewgilmartin.slack.SlackUser;
 import com.andrewgilmartin.util.Logger;
 import java.awt.Color;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Model {
 
@@ -23,43 +25,66 @@ public class Model {
             new Status("CANCELED", Color.GRAY, 10, true)
     );
 
-    private final Set<Workspace> workspaces = new HashSet<>();
-    private final Set<User> users = new HashSet<>();
+    private final Set<Workspace> workspaces = new ConcurrentSkipListSet<>();
+    private final ReadWriteLock workspacesLock = new ReentrantReadWriteLock();
+
+    private final Set<User> users = new ConcurrentSkipListSet<>();
+    private final ReadWriteLock usersLock = new ReentrantReadWriteLock();
 
     public Workspace findWorkspace(String id) {
-        for (Workspace ws : workspaces) {
-            if (ws.getId().equals(id)) {
-                return ws;
+        workspacesLock.readLock().lock();
+        try {
+            for (Workspace ws : workspaces) {
+                if (ws.getId().equals(id)) {
+                    return ws;
+                }
             }
+            return null;
+        } finally {
+            workspacesLock.readLock().unlock();
         }
-        return null;
     }
 
     public Workspace findcreateWorkspace(SlackChannel channel) {
-        Workspace ws = findWorkspace(channel.getId());
-        if (ws == null) {
-            ws = new Workspace(channel.getId(), channel.getName(), DEFAULT_STATUSES);
-            workspaces.add(ws);
+        workspacesLock.writeLock().lock();
+        try {
+            Workspace ws = findWorkspace(channel.getId());
+            if (ws == null) {
+                ws = new Workspace(channel.getId(), channel.getName(), DEFAULT_STATUSES);
+                workspaces.add(ws);
+            }
+            return ws;
+        } finally {
+            workspacesLock.writeLock().unlock();
         }
-        return ws;
     }
 
     public User findUser(String id) {
-        for (User u : users) {
-            if (u.getId().equals(id)) {
-                return u;
+        usersLock.readLock().lock();
+        try {
+            for (User u : users) {
+                if (u.getId().equals(id)) {
+                    return u;
+                }
             }
+            return null;
+        } finally {
+            usersLock.readLock().unlock();
         }
-        return null;
     }
 
     public User findcreateUser(SlackUser slackUser) {
-        User u = findUser(slackUser.getId());
-        if (u == null) {
-            u = new User(slackUser.getId(), slackUser.getName());
-            users.add(u);
+        usersLock.writeLock().lock();
+        try {
+            User u = findUser(slackUser.getId());
+            if (u == null) {
+                u = new User(slackUser.getId(), slackUser.getName());
+                users.add(u);
+            }
+            return u;
+        } finally {
+            usersLock.writeLock().unlock();
         }
-        return u;
     }
 }
 

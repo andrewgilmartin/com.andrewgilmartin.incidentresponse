@@ -4,10 +4,9 @@ import java.awt.Color;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Workspace implements Serializable {
@@ -16,8 +15,8 @@ public class Workspace implements Serializable {
 
     private final String id;
     private final String name;
-    private final Set<Task> tasks = new HashSet<>();
-    private final Set<Status> statuses = new TreeSet<>();
+    private final Set<Task> tasks = new ConcurrentSkipListSet<>();
+    private final Set<Status> statuses = new ConcurrentSkipListSet<>();
     private Status defaultIntitialStatus;
 
     public Workspace(String id, String name, List<Status> statuses) {
