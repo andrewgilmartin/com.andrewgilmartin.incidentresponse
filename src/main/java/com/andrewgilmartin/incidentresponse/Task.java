@@ -3,6 +3,7 @@ package com.andrewgilmartin.incidentresponse;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class Task {
@@ -11,47 +12,71 @@ public class Task {
     private final User creator;
     private String description;
     private Status status;
-    private final Set<User> assignments = new HashSet<>();
+    private Set<User> assignments;
 
     public Task(String id, String description, User creator, Collection<User> assignments, Status status) {
         this.id = id;
         this.description = description;
         this.creator = creator;
         this.status = status;
-        this.assignments.addAll(assignments);
+        this.assignments = Collections.unmodifiableSet(new HashSet<>(assignments));
     }
 
-    public String getId() {
+    public synchronized String getId() {
         return id;
     }
 
-    public String getDescription() {
+    public synchronized String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public synchronized void setDescription(String description) {
         this.description = description;
     }
 
-    public Status getStatus() {
+    public synchronized Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public synchronized void setStatus(Status status) {
         this.status = status;
     }
 
-    public User getCreator() {
+    public synchronized User getCreator() {
         return creator;
     }
 
-    public void setAssignments(Collection<User> users) {
-        assignments.clear();
-        assignments.addAll(users);
+    public synchronized void setAssignments(Collection<User> assignments) {
+        this.assignments = Collections.unmodifiableSet(new HashSet<>(assignments));
     }
 
-    public Set<User> getAssignments() {
-        return Collections.unmodifiableSet(assignments);
+    public synchronized Set<User> getAssignments() {
+        return assignments;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 79 * hash + Objects.hashCode(this.id);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Task other = (Task) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
     }
 }
 
