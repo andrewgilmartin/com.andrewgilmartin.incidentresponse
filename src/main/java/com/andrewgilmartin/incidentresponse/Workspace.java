@@ -1,10 +1,8 @@
 package com.andrewgilmartin.incidentresponse;
 
-import java.awt.Color;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -15,15 +13,13 @@ public class Workspace implements Serializable {
 
     private final String id;
     private final String name;
-    private final Set<Task> tasks = new ConcurrentSkipListSet<>();
-    private final Set<Status> statuses = new ConcurrentSkipListSet<>();
-    private Status defaultIntitialStatus;
+    private final Set<Task> tasks = new ConcurrentSkipListSet<>((Task a, Task b) -> a.getId().compareTo(b.getId()));
+    private final StatusSet statusSet;
 
-    public Workspace(String id, String name, List<Status> statuses) {
+    public Workspace(String id, String name, StatusSet statusSet) {
         this.id = id;
         this.name = name;
-        this.statuses.addAll(statuses);
-        this.defaultIntitialStatus = statuses.get(0);
+        this.statusSet = statusSet;
     }
 
     public String getId() {
@@ -34,46 +30,24 @@ public class Workspace implements Serializable {
         return name;
     }
 
+    public Set<Task> getTasks() {
+        return Collections.unmodifiableSet(tasks);
+    }
+
+    public StatusSet getStatusSet() {
+        return statusSet;
+    }
+
     public Task createTask(String description, User creator, Collection<User> assignments, Status status) {
         Task task = new Task(
                 Long.toString(TASK_ID_GENERATOR.incrementAndGet()),
                 description,
                 creator,
                 assignments,
-                status != null ? status : defaultIntitialStatus // TODO ensure that status is in the available statuses
+                status != null ? status : statusSet.getDefaultIntitialStatus() // TODO ensure that status is in the available statuses
         );
         tasks.add(task);
         return task;
-    }
-
-    public Set<Task> getTasks() {
-        return Collections.unmodifiableSet(tasks);
-    }
-
-    public Status createStatus(String name, Color color, int order, boolean finished) {
-        Status status = new Status(name, color, order, finished);
-        statuses.add(status);
-        if (status.compareTo(defaultIntitialStatus) < 0) {
-            defaultIntitialStatus = status;
-        }
-        return status;
-    }
-
-    public void removeStatus(Status removed, Status replacement) {
-        if (statuses.remove(removed)) {
-            for (Task task : tasks) {
-                if (task.getStatus() == removed) {
-                    task.setStatus(replacement);
-                }
-            }
-            if (removed.equals(defaultIntitialStatus)) {
-                this.defaultIntitialStatus = statuses.stream().sorted().findFirst().get();
-            }
-        }
-    }
-
-    public Set<Status> getStatuses() {
-        return Collections.unmodifiableSet(statuses);
     }
 
     public Task findTask(String id) {
@@ -84,16 +58,6 @@ public class Workspace implements Serializable {
         }
         return null;
     }
-
-    public Status findStatus(String name) {
-        for (Status status : statuses) {
-            if (status.getName().equalsIgnoreCase(name)) {
-                return status;
-            }
-        }
-        return null;
-    }
-
 }
 
 // END

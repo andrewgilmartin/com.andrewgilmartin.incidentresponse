@@ -63,6 +63,9 @@ public class Status implements Comparable<Status> {
         return true;
     }
 
+    /**
+     * Compare by order and name.
+     */
     @Override
     public int compareTo(Status that) {
         int c = this.order - that.order;

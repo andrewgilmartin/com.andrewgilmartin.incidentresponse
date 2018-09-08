@@ -42,6 +42,10 @@ public class IncidentResponseSlackApp implements SlackApp {
         } else if (message.hasText()) {
             if ("help".equalsIgnoreCase(message.getText())) {
                 command = new HelpCommand(request, response, workspace, message);
+            } else if ("all".equalsIgnoreCase(message.getText())) {
+                command = new ListCommand(request, response, workspace, message);
+            } else if ("finished".equalsIgnoreCase(message.getText())) {
+                command = new ListCommand(request, response, workspace, message);
             } else {
                 command = new AddCommand(request, response, workspace, message);
             }
@@ -124,8 +128,8 @@ public class IncidentResponseSlackApp implements SlackApp {
                     .text("Briefly, the 3 incident response actions are add task, update task, and list tasks. Ie, ").line()
                     .textf("`%s description [user...] [status]`", slackRequest.getCommandName()).line()
                     .textf("`%s 2 [description] [user...] [status]`", slackRequest.getCommandName()).line()
-                    .textf("`%s [user...] [status...]`", slackRequest.getCommandName()).line()
-                    .text("The available statuses are ").acceptAll((c, s) -> c.space().text(s), workspace.getStatuses()).line()
+                    .textf("`%s [ all | finished ] [user...] [status...]`", slackRequest.getCommandName()).line()
+                    .text("The available statuses are ").acceptAll((c, s) -> c.space().text(s), workspace.getStatusSet().getStatuses()).line()
                     .text("For further information visit ").link("http://nowhere.com");
 
         }
@@ -139,15 +143,21 @@ public class IncidentResponseSlackApp implements SlackApp {
 
         @Override
         public void perform() {
-            Iterator<Task> tasks = workspace.getTasks()
-                    .stream()
-                    .filter(
-                            TaskFilter.create()
-                                    .hasDescription(message.getText())
-                                    .hasStatus(message.getStatuses())
-                                    .hasAssigment(message.getUsers()))
-                    .sorted((a, b) -> a.getId().compareTo(b.getId()))
-                    .iterator();
+            TaskFilter listMatching = new TaskFilter();
+            if ("all".equalsIgnoreCase(message.getText())) {
+                listMatching.hasStatus(workspace.getStatusSet().getStatuses());
+            } else if ("finished".equalsIgnoreCase(message.getText())) {
+                listMatching.hasStatus(workspace.getStatusSet().getFinishedStatuses());
+            } else if (message.hasStatuses()) {
+                listMatching.hasStatus(message.getStatuses());
+            }
+            else {
+                listMatching.hasStatus(workspace.getStatusSet().getUnfinishedStatuses());
+            }
+            if (message.hasUsers()) {
+                listMatching.hasAssigment(message.getUsers());
+            }
+            Iterator<Task> tasks = workspace.getTasks().stream().filter(listMatching).iterator();
             if (tasks.hasNext()) {
                 slackResponse.getResponseContent().text("Matched tasks");
                 do {
@@ -187,6 +197,7 @@ public class IncidentResponseSlackApp implements SlackApp {
         public void perform() {
             Task task = workspace.findTask(message.getId());
             if (task != null) {
+                // NOTE multiple threads could be in this code updating the same task
                 if (message.hasText()) {
                     task.setDescription(message.getText());
                 }
@@ -194,8 +205,9 @@ public class IncidentResponseSlackApp implements SlackApp {
                 boolean becomeUnfinished = false;
                 if (message.hasStatuses()) {
                     Status status = message.firstStatus();
-                    becameFinished = status.isFinished() && !task.getStatus().isFinished();
-                    becomeUnfinished = !status.isFinished() && task.getStatus().isFinished();
+                    boolean wasFinished = task.getStatus().isFinished(); // need stable value for the next two assignments
+                    becameFinished = !wasFinished && status.isFinished();
+                    becomeUnfinished = wasFinished && !status.isFinished();
                     task.setStatus(status);
                 }
                 if (message.hasUsers()) {
@@ -211,7 +223,7 @@ public class IncidentResponseSlackApp implements SlackApp {
                     slackResponse.getResponseContent().text("Updated task").accept(formatTask, task);
                 }
             } else {
-                slackResponse.setErrorText("I'm sorry, but I can't find the task. Perhaps, list the tasks to confirm the task id.");
+                slackResponse.setErrorText("I'm sorry, but I can't find the task. List the tasks to confirm the task id.");
             }
         }
     }

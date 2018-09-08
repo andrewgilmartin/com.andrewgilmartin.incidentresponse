@@ -220,7 +220,7 @@ public class Message {
                     // in status
                     if (c == EOL) {
                         String name = string(m, begin, i);
-                        Status status = workspace.findStatus(name);
+                        Status status = workspace.getStatusSet().findStatus(name);
                         if (status == null) {
                             errorMessage = "unknown status !" + name;
                         } else {
@@ -229,7 +229,7 @@ public class Message {
                         break PARSE;
                     } else if (!Character.isLetterOrDigit(c)) {
                         String name = string(m, begin, i - 1);
-                        Status status = workspace.findStatus(name);
+                        Status status = workspace.getStatusSet().findStatus(name);
                         if (status == null) {
                             errorMessage = "unknown status !" + name;
                             break PARSE;
