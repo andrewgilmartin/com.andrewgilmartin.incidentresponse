@@ -9,19 +9,11 @@ import com.andrewgilmartin.slack.SlackApp;
 
 public class IncidentResponseSlackApp implements SlackApp {
 
-    private String verificationToken;
+    private final String verificationToken;
     private final Model model = new Model();
     private final BiConsumer<SlackResponseContent, Task> formatTask = this::formatTask; // helper for inner class instances
 
-    public IncidentResponseSlackApp() {
-        String verificationToken = System.getProperty("com.andrewgilmartin.incidentresponse.IncidentResponseSlackApp.verificationToken");
-        if (verificationToken == null) {
-            throw new IllegalStateException("Missing the Slack verification token property com.andrewgilmartin.incidentresponse.IncidentResponseSlackApp.verificationToken");
-        }
-        this.verificationToken = verificationToken;
-    }
-
-    public void setVerificationToken(String verificationToken) {
+    public IncidentResponseSlackApp(String verificationToken) {
         this.verificationToken = verificationToken;
     }
 

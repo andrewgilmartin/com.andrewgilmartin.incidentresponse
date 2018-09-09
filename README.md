@@ -1,6 +1,6 @@
 # Incident Response Slack App
 
-As our organization learns how to better use Slack we have experimented with different ways of managing the response to incidents, aka emergencies. When an incident is discovered the existing #incident-response channel is used to send an alert. An experiment was to then immediately create a new channel for only the new incident's pertinent communications. While we rarely have overlapping incidents having a dedicated channel prevents the interleaving of messages about other incidents (and tangents) and only those working the incident need join. When the incident is resolved its messages can be copied into the beginnings of the post-mortem document, and then the channel can be archived.
+As we learn how to better use Slack we are experimenting with different ways of managing our response to incidents, aka emergencies. One experiment is that when an incident is discovered the existing #incident-response channel is used to send an alert to those on-call. We then immediately create a new channel for only the new incident's staffing and communications. While we rarely have overlapping incidents, having a dedicated channel does prevent the interleaving of messages about other incidents, too many tangents, and only those working the incident are disturbed by @channel or @here messages. When the incident is resolved the channel's messages can be copied into the beginnings of the post-mortem document, and then archived.
 
 During the response, tasks emerge that need to be assigned and tracked. Slack itself is not good at this alone. There are many applications for task management that can be made accessible via Slack slash-commands. For incident response tasks, however, the general purpose applications were too focused on the user and not enough on the channel. When listing tasks you only want to see those for this incident. While applications have means of limiting the results with selection criteria, overall, the fit was bad.
 
@@ -17,7 +17,7 @@ These use cases turned into the `/ir` slash-command
 
 /ir task-id [ description [ user … ] [ status ]
 
-/ir [ user … ] [ status … ]
+/ir [ all | finished ] [ user … ] [ status … ]
 ```
 
 The description is text, the user (or users) is indicated with an at-name, eg “@andrew”, and the status is indicated with a bang-name, eg “!red”. The task-id is a positive integer., eg “345”.
@@ -44,7 +44,9 @@ and then run
 
 ```
 java \
-  -Dcom.andrewgilmartin.incidentresponse.IncidentResponseSlackApp.verificationToken=XXX \
+  -Dir.token=XXX \
+  -Dir.port=9090 \
+  -Dir.path=/ \
   -jar target/incidentresponse1-1.0-SNAPSHOT.jar \
   9090
 ```

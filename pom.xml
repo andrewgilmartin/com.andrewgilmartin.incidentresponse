@@ -19,7 +19,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.andrewgilmartin.slack.httpserver.HttpServerSlackServer</mainClass>
+                            <mainClass>com.andrewgilmartin.incidentresponse.integration.RunStandalone</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

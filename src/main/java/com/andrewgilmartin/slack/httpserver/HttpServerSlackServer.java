@@ -18,10 +18,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.Executors;
 import com.andrewgilmartin.slack.SlackApp;
 import com.andrewgilmartin.slack.SlackResponseBase;
+import java.util.Objects;
 
 /**
  *
@@ -54,28 +54,14 @@ public class HttpServerSlackServer implements Runnable, HttpHandler, AutoCloseab
     private static final int HTTP_NOT_FOUND = 404;
     private static final int HTTP_INTERNAL_SERVER_ERROR = 500;
 
-    private final SlackApp slackBot;
+    private final SlackApp slackApp;
     private final HttpServer httpServer;
 
-    public static void main(String... args) throws Exception {
-        logger.info("starting server on port 9090");
-        try {
-            HttpServerSlackServer s = new HttpServerSlackServer(9090);
-            s.run();
-        } catch (Exception e) {
-            logger.error(e, "unable to ...");
-            throw e;
-        }
-    }
-
-    public HttpServerSlackServer(int port) throws IOException {
-        slackBot = findFirst(ServiceLoader.load(SlackApp.class));
-        if (slackBot == null) {
-            throw new IllegalStateException("no com.andrewgilmartin.slack.SlackApp services defined in /META-INF/services/");
-        }
-        httpServer = HttpServer.create(new InetSocketAddress(port), 10);
-        httpServer.setExecutor(Executors.newFixedThreadPool(10));
-        httpServer.createContext("/", this);
+    public HttpServerSlackServer(int port, String path, SlackApp slackApp) throws IOException {
+        this.slackApp = slackApp;
+        this.httpServer = HttpServer.create(new InetSocketAddress(port), 10);
+        this.httpServer.setExecutor(Executors.newFixedThreadPool(10));
+        this.httpServer.createContext(path, this);
     }
 
     @Override
@@ -96,7 +82,7 @@ public class HttpServerSlackServer implements Runnable, HttpHandler, AutoCloseab
         if (sslCheck != null && "1".equals(sslCheck)) {
             he.sendResponseHeaders(HTTP_OK, 0);
             he.getResponseBody().close();
-        } else if (verificationToken == null || !verificationToken.equals(slackBot.getVerificationToken())) {
+        } else if (verificationToken == null || !verificationToken.equals(slackApp.getVerificationToken())) {
             he.sendResponseHeaders(HTTP_UNAUTHORIZED, 0);
             he.getResponseBody().close();
         } else {
@@ -107,7 +93,7 @@ public class HttpServerSlackServer implements Runnable, HttpHandler, AutoCloseab
                     findFirst(parameters, "text")
             );
             SlackResponseBase slackResponse = new SlackResponseBase();
-            slackBot.request(slackRequest, slackResponse);
+            slackApp.request(slackRequest, slackResponse);
             he.getResponseHeaders().add("content-type", "application/json; charset=utf-8");
             he.sendResponseHeaders(HTTP_OK, 0);
             slackResponse.render(he.getResponseBody());
