@@ -35,9 +35,9 @@ public class Status implements Comparable<Status> {
 
     @Override
     public String toString() {
-        return "!"+name;
+        return name;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -69,12 +69,12 @@ public class Status implements Comparable<Status> {
     @Override
     public int compareTo(Status that) {
         int c = this.order - that.order;
-        if ( c == 0 ) {
+        if (c == 0) {
             c = this.name.compareTo(that.name);
         }
         return c;
     }
-        
+
 }
 
 // END

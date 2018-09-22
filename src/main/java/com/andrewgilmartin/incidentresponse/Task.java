@@ -10,9 +10,9 @@ public class Task {
 
     private final String id;
     private final User creator;
-    private String description;
-    private Status status;
-    private Set<User> assignments;
+    private final String description;
+    private final Status status;
+    private final Set<User> assignments;
 
     public Task(String id, String description, User creator, Collection<User> assignments, Status status) {
         this.id = id;
@@ -30,24 +30,12 @@ public class Task {
         return description;
     }
 
-    public synchronized void setDescription(String description) {
-        this.description = description;
-    }
-
     public synchronized Status getStatus() {
         return status;
     }
 
-    public synchronized void setStatus(Status status) {
-        this.status = status;
-    }
-
     public synchronized User getCreator() {
         return creator;
-    }
-
-    public synchronized void setAssignments(Collection<User> assignments) {
-        this.assignments = Collections.unmodifiableSet(new HashSet<>(assignments));
     }
 
     public synchronized Set<User> getAssignments() {

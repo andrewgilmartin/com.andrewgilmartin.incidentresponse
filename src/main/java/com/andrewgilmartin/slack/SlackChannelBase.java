@@ -30,18 +30,18 @@ public class SlackChannelBase implements SlackChannel {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(Object that) {
+        if (this == that) {
             return true;
         }
-        if (obj == null) {
+        if (that == null) {
             return false;
         }
         // allow subclass to not have to implement the equals method
-        if (!getClass().isAssignableFrom(obj.getClass())) {
+        if (getClass() != that.getClass()) {
             return false;
         }
-        final SlackChannelBase other = (SlackChannelBase) obj;
+        final SlackChannelBase other = (SlackChannelBase) that;
         if (!Objects.equals(this.id, other.id)) {
             return false;
         }

@@ -1,8 +1,12 @@
 package com.andrewgilmartin.slack;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SlackUserBase implements SlackUser {
+
+    protected static Pattern SLACK_USER_PATTERN = Pattern.compile("<(.*?)\\|(.*?)>");
 
     private final String id;
     private final String name;
@@ -30,18 +34,17 @@ public class SlackUserBase implements SlackUser {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(Object that) {
+        if (this == that) {
             return true;
         }
-        if (obj == null) {
+        if (that == null) {
             return false;
         }
-        // allow subclass to not have to implement the equals method
-        if (!getClass().isAssignableFrom(obj.getClass())) {
+        if (getClass() != that.getClass()) {
             return false;
         }
-        final SlackUserBase other = (SlackUserBase) obj;
+        final SlackUserBase other = (SlackUserBase) that;
         if (!Objects.equals(this.id, other.id)) {
             return false;
         }
@@ -51,6 +54,14 @@ public class SlackUserBase implements SlackUser {
     @Override
     public String toString() {
         return "<" + id + "|" + name + ">";
+    }
+
+    public static SlackUserBase parseSlackUserBase(String s) {
+        Matcher m = SLACK_USER_PATTERN.matcher(s);
+        if (m.matches()) {
+            return new SlackUserBase(m.group(1), m.group(2));
+        }
+        return null;
     }
 }
 

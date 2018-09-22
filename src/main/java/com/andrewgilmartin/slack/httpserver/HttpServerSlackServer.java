@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import com.andrewgilmartin.slack.SlackApp;
 import com.andrewgilmartin.slack.SlackResponseBase;
-import java.util.Objects;
 
 /**
  *
@@ -127,10 +126,6 @@ public class HttpServerSlackServer implements Runnable, HttpHandler, AutoCloseab
 
     private <T> T findFirst(Iterator<T> i) {
         return i == null || !i.hasNext() ? null : i.next();
-    }
-
-    private <T> T findFirst(Iterable<T> i) {
-        return i == null ? null : findFirst(i.iterator());
     }
 
 }

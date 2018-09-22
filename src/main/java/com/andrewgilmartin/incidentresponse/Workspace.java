@@ -1,24 +1,15 @@
 package com.andrewgilmartin.incidentresponse;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Objects;
 
 public class Workspace implements Serializable {
 
-    private static final AtomicLong TASK_ID_GENERATOR = new AtomicLong(1);
-
     private final String id;
-    private final String name;
-    private final Set<Task> tasks = new ConcurrentSkipListSet<>((Task a, Task b) -> a.getId().compareTo(b.getId()));
     private final StatusSet statusSet;
 
-    public Workspace(String id, String name, StatusSet statusSet) {
+    public Workspace(String id, StatusSet statusSet) {
         this.id = id;
-        this.name = name;
         this.statusSet = statusSet;
     }
 
@@ -26,38 +17,36 @@ public class Workspace implements Serializable {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public Set<Task> getTasks() {
-        return Collections.unmodifiableSet(tasks);
-    }
-
     public StatusSet getStatusSet() {
         return statusSet;
     }
 
-    public Task createTask(String description, User creator, Collection<User> assignments, Status status) {
-        Task task = new Task(
-                Long.toString(TASK_ID_GENERATOR.incrementAndGet()),
-                description,
-                creator,
-                assignments,
-                status != null ? status : statusSet.getDefaultIntitialStatus() // TODO ensure that status is in the available statuses
-        );
-        tasks.add(task);
-        return task;
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 13 * hash + Objects.hashCode(this.id);
+        return hash;
     }
 
-    public Task findTask(String id) {
-        for (Task task : tasks) {
-            if (task.getId().equals(id)) {
-                return task;
-            }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
         }
-        return null;
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Workspace other = (Workspace) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
     }
+    
+    
 }
 
 // END
