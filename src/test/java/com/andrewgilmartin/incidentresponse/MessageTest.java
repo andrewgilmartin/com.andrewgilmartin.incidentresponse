@@ -12,7 +12,6 @@ public class MessageTest {
 
     private static final Workspace WORKSPACE = new Workspace(
             "id-1234",
-            "Test Workspace",
             new StatusSet(
                     Arrays.asList(NOT_DONE_STATUS, DONE_STATUS),
                     NOT_DONE_STATUS
@@ -37,7 +36,7 @@ public class MessageTest {
         assertFalse(instance.hasError());
         assertFalse(instance.hasText());
 
-        instance = new Message(WORKSPACE, " " + DONE_STATUS + "  ");
+        instance = new Message(WORKSPACE, " !" + DONE_STATUS + "  ");
         assertFalse(instance.hasError());
         assertFalse(instance.hasText());
 
@@ -100,13 +99,13 @@ public class MessageTest {
         instance = new Message(WORKSPACE, "This is an !unknown error");
         assertTrue(instance.hasError());
 
-        instance = new Message(WORKSPACE, "This is not an " + DONE_STATUS.toString() + " error");
+        instance = new Message(WORKSPACE, "This is not an !" + DONE_STATUS.toString() + " error");
         assertFalse(instance.hasError());
         assertTrue(instance.getStatuses().size() == 1);
         assertEquals(DONE_STATUS, instance.getStatuses().get(0));
         assertEquals(DONE_STATUS, instance.firstStatus());
 
-        instance = new Message(WORKSPACE, "This " + DONE_STATUS.toString() + " is not an " + NOT_DONE_STATUS.toString() + " error");
+        instance = new Message(WORKSPACE, "This !" + DONE_STATUS.toString() + " is not an !" + NOT_DONE_STATUS.toString() + " error");
         assertFalse(instance.hasError());
         assertTrue(instance.getStatuses().size() == 2);
         assertEquals(DONE_STATUS, instance.getStatuses().get(0));
