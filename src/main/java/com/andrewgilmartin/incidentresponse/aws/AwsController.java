@@ -89,9 +89,13 @@ public class AwsController implements Controller {
 
     @Override
     public Task findTask(Workspace workspace, String taskId) {
-        GetAttributesResult result = db.getAttributes(new GetAttributesRequest(domain, taskId));
-        if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
-            return constructTask(workspace, taskId, result.getAttributes());
+        try {
+            GetAttributesResult result = db.getAttributes(new GetAttributesRequest(domain, taskId));
+            if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
+                return constructTask(workspace, taskId, result.getAttributes());
+            }
+        } catch (SdkBaseException e) {
+            logger.error(e, "unable to find task: workspaceId={0}; taskId={1}", workspace.getId(), taskId);
         }
         return null;
     }
@@ -131,55 +135,63 @@ public class AwsController implements Controller {
 
     @Override
     public Task addTask(Workspace workspace, String description, User creator, Collection<User> assignments, Status status) {
-        String taskId = UUID.randomUUID().toString();
-        List<ReplaceableAttribute> attributes = new LinkedList<>();
-        attributes.add(new ReplaceableAttribute(WORKSPACE_ATTRIBUTE, workspace.getId(), Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(DESCRIPTION_ATTRIBUTE, description, Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(CREATOR_ATTRIBUTE, creator.toString(), Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(STATUS_ATTRIBUTE, status.toString(), Boolean.TRUE));
-        attributes.addAll(replaceableAttributeValues(ASSIGNMENT_ATTRIBUTE, assignments.iterator()));
-        PutAttributesResult result = db.putAttributes(
-                new PutAttributesRequest()
-                        .withDomainName(domain)
-                        .withItemName(taskId)
-                        .withAttributes(attributes)
-        );
-        if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
-            Task task = new Task(
-                    taskId,
-                    description,
-                    creator,
-                    assignments,
-                    status
+        try {
+            String taskId = UUID.randomUUID().toString();
+            List<ReplaceableAttribute> attributes = new LinkedList<>();
+            attributes.add(new ReplaceableAttribute(WORKSPACE_ATTRIBUTE, workspace.getId(), Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(DESCRIPTION_ATTRIBUTE, description, Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(CREATOR_ATTRIBUTE, creator.toString(), Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(STATUS_ATTRIBUTE, status.toString(), Boolean.TRUE));
+            attributes.addAll(replaceableAttributeValues(ASSIGNMENT_ATTRIBUTE, assignments.iterator()));
+            PutAttributesResult result = db.putAttributes(
+                    new PutAttributesRequest()
+                            .withDomainName(domain)
+                            .withItemName(taskId)
+                            .withAttributes(attributes)
             );
-            return task;
+            if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
+                Task task = new Task(
+                        taskId,
+                        description,
+                        creator,
+                        assignments,
+                        status
+                );
+                return task;
+            }
+        } catch (SdkBaseException e) {
+            logger.error(e, "unable to add task: workspaceId={0}", workspace.getId());
         }
         return null;
     }
 
     @Override
     public Task updateTask(Workspace workspace, String taskId, String description, User creator, Collection<User> assignments, Status status) {
-        List<ReplaceableAttribute> attributes = new LinkedList<>();
-        attributes.add(new ReplaceableAttribute(WORKSPACE_ATTRIBUTE, workspace.getId(), Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(DESCRIPTION_ATTRIBUTE, description, Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(CREATOR_ATTRIBUTE, creator.toString(), Boolean.TRUE));
-        attributes.add(new ReplaceableAttribute(STATUS_ATTRIBUTE, status.toString(), Boolean.TRUE));
-        attributes.addAll(replaceableAttributeValues(ASSIGNMENT_ATTRIBUTE, assignments.iterator()));
-        PutAttributesResult result = db.putAttributes(
-                new PutAttributesRequest()
-                        .withDomainName(domain)
-                        .withItemName(taskId)
-                        .withAttributes(attributes)
-        );
-        if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
-            Task task = new Task(
-                    taskId,
-                    description,
-                    creator,
-                    assignments,
-                    status
+        try {
+            List<ReplaceableAttribute> attributes = new LinkedList<>();
+            attributes.add(new ReplaceableAttribute(WORKSPACE_ATTRIBUTE, workspace.getId(), Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(DESCRIPTION_ATTRIBUTE, description, Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(CREATOR_ATTRIBUTE, creator.toString(), Boolean.TRUE));
+            attributes.add(new ReplaceableAttribute(STATUS_ATTRIBUTE, status.toString(), Boolean.TRUE));
+            attributes.addAll(replaceableAttributeValues(ASSIGNMENT_ATTRIBUTE, assignments.iterator()));
+            PutAttributesResult result = db.putAttributes(
+                    new PutAttributesRequest()
+                            .withDomainName(domain)
+                            .withItemName(taskId)
+                            .withAttributes(attributes)
             );
-            return task;
+            if (result.getSdkHttpMetadata().getHttpStatusCode() == 200) {
+                Task task = new Task(
+                        taskId,
+                        description,
+                        creator,
+                        assignments,
+                        status
+                );
+                return task;
+            }
+        } catch (SdkBaseException e) {
+            logger.error(e, "unable to update task: workspaceId={0}; taskId={1}", workspace.getId(), taskId);
         }
         return null;
     }
