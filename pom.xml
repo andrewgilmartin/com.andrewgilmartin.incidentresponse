@@ -19,7 +19,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.andrewgilmartin.incidentresponse.integration.RunStandalone</mainClass>
+                            <mainClass>com.andrewgilmartin.incidentresponse.memory.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
