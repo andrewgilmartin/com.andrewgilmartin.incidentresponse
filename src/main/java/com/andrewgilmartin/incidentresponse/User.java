@@ -13,4 +13,11 @@ public class User extends SlackUserBase {
         super(id, name);
     }
 
+    public static User parseUser(String s) {
+        SlackUser u = parseSlackUserBase(s);
+        if (u != null) {
+            return new User(u.getId(), u.getName());
+        }
+        return null;
+    }
 }

@@ -1,5 +1,6 @@
 package com.andrewgilmartin.incidentresponse.aws;
 
+import com.amazonaws.SdkBaseException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.andrewgilmartin.incidentresponse.Controller;
 import com.andrewgilmartin.incidentresponse.*;
@@ -15,6 +16,8 @@ import com.amazonaws.services.simpledb.model.PutAttributesRequest;
 import com.amazonaws.services.simpledb.model.PutAttributesResult;
 import com.amazonaws.services.simpledb.model.ReplaceableAttribute;
 import com.amazonaws.services.simpledb.model.SelectRequest;
+import static com.amazonaws.services.simpledb.util.SimpleDBUtils.quoteName;
+import static com.amazonaws.services.simpledb.util.SimpleDBUtils.quoteValue;
 import com.andrewgilmartin.slack.SlackUser;
 import com.andrewgilmartin.util.Logger;
 import java.util.Collection;
@@ -37,7 +40,7 @@ public class AwsController implements Controller {
     private final String domain;
 
     public AwsController(String domain, AWSCredentialsProvider credentialsProvider) {
-        this.domain = domain;        
+        this.domain = domain;
         this.db = AmazonSimpleDBClientBuilder
                 .standard()
                 .withCredentials(credentialsProvider) // eg, new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsKey,awsSecret))
@@ -58,24 +61,28 @@ public class AwsController implements Controller {
     @Override
     public List<Task> findTasks(Workspace workspace, TaskFilter taskFilter) {
         List<Task> tasks = new LinkedList<>();
-        SelectRequest selectRequest = new SelectRequest()
-                .withSelectExpression(
-                        "select "
-                        + DESCRIPTION_ATTRIBUTE + ", "
-                        + STATUS_ATTRIBUTE + ", "
-                        + CREATOR_ATTRIBUTE + ", "
-                        + ASSIGNMENT_ATTRIBUTE
-                        + " from "
-                        + domain
-                        + " where "
-                        + WORKSPACE_ATTRIBUTE + " = " + workspace.getId()
-                )
-                .withConsistentRead(false); // TODO investiage whether or not this can be set to true
-        for (Item item : db.select(selectRequest).getItems()) {
-            Task task = constructTask(workspace, item.getName(), item.getAttributes());
-            if (taskFilter.test(task)) {
-                tasks.add(task);
+        try {
+            SelectRequest selectRequest = new SelectRequest()
+                    .withSelectExpression(
+                            "select "
+                            + DESCRIPTION_ATTRIBUTE + ", "
+                            + STATUS_ATTRIBUTE + ", "
+                            + CREATOR_ATTRIBUTE + ", "
+                            + ASSIGNMENT_ATTRIBUTE
+                            + " from "
+                            + quoteName(domain)
+                            + " where "
+                            + WORKSPACE_ATTRIBUTE + " = " + quoteValue(workspace.getId())
+                    )
+                    .withConsistentRead(false); // TODO investiage whether or not this can be set to true
+            for (Item item : db.select(selectRequest).getItems()) {
+                Task task = constructTask(workspace, item.getName(), item.getAttributes());
+                if (taskFilter.test(task)) {
+                    tasks.add(task);
+                }
             }
+        } catch (SdkBaseException e) {
+            logger.error(e, "unable to list tasks: workspaceId={0}", workspace.getId());
         }
         return tasks;
     }
@@ -103,10 +110,10 @@ public class AwsController implements Controller {
                     status = workspace.getStatusSet().findStatus(attribute.getValue());
                     break;
                 case CREATOR_ATTRIBUTE:
-                    creator = new User(attribute.getValue(), "");
+                    creator = User.parseUser(attribute.getValue());
                     break;
                 case ASSIGNMENT_ATTRIBUTE:
-                    assignments.add(new User(attribute.getValue(), ""));
+                    assignments.add(User.parseUser(attribute.getValue()));
                     break;
                 default:
                     break;

@@ -5,6 +5,7 @@ import com.andrewgilmartin.slack.SlackResponse;
 import com.andrewgilmartin.slack.SlackResponseContent;
 import java.util.function.BiConsumer;
 import com.andrewgilmartin.slack.SlackApp;
+import java.util.Collection;
 import java.util.List;
 
 public class IncidentResponseSlackApp implements SlackApp {
@@ -59,7 +60,7 @@ public class IncidentResponseSlackApp implements SlackApp {
                 .color(task.getStatus().getColor())
                 .text(task.getId())
                 .space()
-                .text(task.getStatus())
+                .text("!").text(task.getStatus())
                 .space()
                 .text(task.getDescription());
         for (User user : task.getAssignments()) {
@@ -179,7 +180,7 @@ public class IncidentResponseSlackApp implements SlackApp {
                     message.getText(),
                     new User(slackRequest.getUser()),
                     message.getUsers(),
-                    message.hasStatuses() ? message.firstStatus() : null
+                    message.hasStatuses() ? message.firstStatus() : workspace.getStatusSet().getDefaultIntitialStatus()
             );
             slackResponse.getResponseContent().text("Added task").accept(formatTask, addedTask);
         }
@@ -195,12 +196,17 @@ public class IncidentResponseSlackApp implements SlackApp {
         public void perform() {
             Task task = controller.findTask(workspace, message.getId());
             if (task != null) {
-                String description = null;
                 // NOTE multiple threads could be in this code updating the same task
+                
+                String description;
                 if (message.hasText()) {
                     description = message.getText();
                 }
-                Status status = null;
+                else {
+                    description = task.getDescription();
+                }
+                
+                Status status;
                 boolean becameFinished = false;
                 boolean becameUnfinished = false;
                 if (message.hasStatuses()) {
@@ -209,11 +215,19 @@ public class IncidentResponseSlackApp implements SlackApp {
                     becameFinished = !wasFinished && status.isFinished();
                     becameUnfinished = wasFinished && !status.isFinished();
                 }
-                List<User> assignments = null;
+                else {
+                    status = task.getStatus();
+                }
+                
+                Collection<User> assignments;
                 if (message.hasUsers()) {
                     assignments = message.getUsers();
                 }
-                User creator = controller.findcreateUser(slackRequest.getUser());
+                else {
+                    assignments = task.getAssignments();
+                }
+                
+                User creator = task.getCreator();
                 
                 Task updatedTask = controller.updateTask(workspace, task.getId(), description, creator, assignments, status);
 

@@ -11,7 +11,7 @@ import java.util.logging.Level;
 public class Logger {
 
     private final java.util.logging.Logger logger;
-
+        
     public static Logger getLogger(Class c) {
         return new Logger(java.util.logging.Logger.getLogger(c.getName()));
     }
