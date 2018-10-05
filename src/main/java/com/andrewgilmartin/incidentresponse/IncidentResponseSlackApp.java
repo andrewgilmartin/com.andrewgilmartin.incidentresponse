@@ -12,7 +12,7 @@ public class IncidentResponseSlackApp implements SlackApp {
 
     private final String verificationToken;
     private final Controller controller;
-    
+
     private final BiConsumer<SlackResponseContent, Task> formatTask = this::formatTask; // helper for inner class instances
 
     public IncidentResponseSlackApp(Controller controller, String verificationToken) {
@@ -197,15 +197,14 @@ public class IncidentResponseSlackApp implements SlackApp {
             Task task = controller.findTask(workspace, message.getId());
             if (task != null) {
                 // NOTE multiple threads could be in this code updating the same task
-                
+
                 String description;
                 if (message.hasText()) {
                     description = message.getText();
-                }
-                else {
+                } else {
                     description = task.getDescription();
                 }
-                
+
                 Status status;
                 boolean becameFinished = false;
                 boolean becameUnfinished = false;
@@ -214,21 +213,19 @@ public class IncidentResponseSlackApp implements SlackApp {
                     boolean wasFinished = task.getStatus().isFinished(); // need stable value for the next two assignments
                     becameFinished = !wasFinished && status.isFinished();
                     becameUnfinished = wasFinished && !status.isFinished();
-                }
-                else {
+                } else {
                     status = task.getStatus();
                 }
-                
+
                 Collection<User> assignments;
                 if (message.hasUsers()) {
                     assignments = message.getUsers();
-                }
-                else {
+                } else {
                     assignments = task.getAssignments();
                 }
-                
+
                 User creator = task.getCreator();
-                
+
                 Task updatedTask = controller.updateTask(workspace, task.getId(), description, creator, assignments, status);
 
                 if (becameFinished) {

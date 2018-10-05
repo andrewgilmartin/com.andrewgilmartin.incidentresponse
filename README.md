@@ -34,6 +34,8 @@ A user has an id, and a name. (A user is a Slack user.)
 
 A status has a name, color, order, and a completion indicator. The completion indicator aids determining when the channel needs to know about a task’s status change. The color is used when presenting the task as a Slack “attachment.”
 
+## Non-persistant version
+
 To run the implementation create the jar 
 
 ```
@@ -45,11 +47,46 @@ and then run
 ```
 java \
   -Dir.token=XXX \
-  -Dir.port=9090 \
+  -Dir.port=8080 \
   -Dir.path=/ \
-  -jar target/incidentresponse1-1.0-SNAPSHOT.jar \
-  9090
+  -jar target/incidentresponse-1.0-SNAPSHOT.jar
 ```
+
 Replace XXX with your verification token Slack provides when installing a slash command, and 9090 with the port number it should listen on.
+
+## Persistant version
+
+To run the AWS version using SimpleDB for persistance you will need 
+
+1. An AWS account.
+2. An AWS credentials, access key id and secret. The application can access the credentials from
+    * the environmental variables "AWS_ACCESS_KEY_ID" and "AWS_SECRET_ACCESS_KEY", 
+    * the "$HOME/.aws/credentials" file under the "com.andrewgilmartin.incidentresponse" [profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html),
+    * or the EC2 instance.
+3. An [AWS secret](https://console.aws.amazon.com/secretsmanager/home) with name 
+"com.andrewgilmartin.incidentresponse.config" and attributes
+"slack.verification-token" containing the Slack slash command installation's verification token, and 
+"aws.simpledb.domain" containing the name of the SimpleDB database to create and use.
+
+Now run
+
+```
+java ... com.andrewgilmartin.incidentresponse.aws.Main
+```
+
+## Excercising the application outside of Slack
+
+```
+curl \
+    -X POST \
+    -dtoken=FOO \
+    -dchannel_id=cid \
+    -dchannel_name=cname \
+    -duser_id=u1 \
+    -duser_name=u1 \
+    -dcommand=/ir \
+    -dtext='' \
+    http://localhost:8080/
+```
 
 END

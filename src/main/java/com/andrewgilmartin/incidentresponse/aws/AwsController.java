@@ -21,10 +21,12 @@ import static com.amazonaws.services.simpledb.util.SimpleDBUtils.quoteValue;
 import com.andrewgilmartin.slack.SlackUser;
 import com.andrewgilmartin.util.Logger;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AwsController implements Controller {
 
@@ -38,6 +40,7 @@ public class AwsController implements Controller {
 
     private final AmazonSimpleDB db;
     private final String domain;
+    private final Map<String, AtomicInteger> workspaceIdToTaskCount = new HashMap<>();
 
     public AwsController(String domain, AWSCredentialsProvider credentialsProvider) {
         this.domain = domain;
@@ -136,7 +139,7 @@ public class AwsController implements Controller {
     @Override
     public Task addTask(Workspace workspace, String description, User creator, Collection<User> assignments, Status status) {
         try {
-            String taskId = UUID.randomUUID().toString();
+            String taskId = nextTaskId(workspace);
             List<ReplaceableAttribute> attributes = new LinkedList<>();
             attributes.add(new ReplaceableAttribute(WORKSPACE_ATTRIBUTE, workspace.getId(), Boolean.TRUE));
             attributes.add(new ReplaceableAttribute(DESCRIPTION_ATTRIBUTE, description, Boolean.TRUE));
@@ -210,6 +213,37 @@ public class AwsController implements Controller {
     @Override
     public User findcreateUser(SlackUser slackUser) {
         return new User(slackUser.getId(), slackUser.getName());
+    }
+
+    private String nextTaskId(Workspace workspace) {
+        synchronized (workspaceIdToTaskCount) {
+            AtomicInteger count = workspaceIdToTaskCount.get(workspace.getId());
+            if (count == null) {
+                try {
+                    /**
+                     * TODO It is not good practice to put an HTTP request
+                     * within a synchronized block. Given that this is a Slack
+                     * application, we should use a delayed Slack response.
+                     */
+                    SelectRequest selectRequest = new SelectRequest()
+                            .withSelectExpression(
+                                    "select "
+                                    + " count(*) "
+                                    + " from "
+                                    + quoteName(domain)
+                                    + " where "
+                                    + WORKSPACE_ATTRIBUTE + " = " + quoteValue(workspace.getId())
+                            )
+                            .withConsistentRead(false); // TODO investiage whether or not this can be set to true
+                    count = new AtomicInteger(Integer.parseInt(db.select(selectRequest).getItems().get(0).getAttributes().get(0).getValue()));
+                    workspaceIdToTaskCount.put(workspace.getId(), count);
+                } catch (SdkBaseException e) {
+                    logger.error(e, "unable to list tasks: workspaceId={0}", workspace.getId());
+                    return null;
+                }
+            }
+            return Integer.toString(count.incrementAndGet());
+        }
     }
 }
 

@@ -3,6 +3,7 @@ package com.andrewgilmartin.incidentresponse.aws;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
@@ -26,13 +27,14 @@ public class Main {
     public static void main(String... args) throws Exception {
 
         AWSCredentialsProvider awsCredentialsProvider = new AWSCredentialsProviderChain(
-                new ProfileCredentialsProvider("incidentresponse"),
+                new EnvironmentVariableCredentialsProvider(),
+                new ProfileCredentialsProvider("com.andrewgilmartin.incidentresponse"),
                 new EC2ContainerCredentialsProviderWrapper()
         );
 
-        Map<String, String> secrets = getSecrets(awsCredentialsProvider, "us-east-1", "incidentresponse/config");
-        String slackVerificationToken = secrets.get("slackVerificationToken");
-        String awsSimpleDbDomain = secrets.get("awsSimpleDbDomain");
+        Map<String, String> secrets = getSecrets(awsCredentialsProvider, "com.andrewgilmartin.incidentresponse.config");
+        String slackVerificationToken = secrets.get("slack.verification-token");
+        String awsSimpleDbDomain = secrets.get("aws.simpledb.domain");
 
         IncidentResponseSlackApp slackApp = new IncidentResponseSlackApp(
                 new AwsController(awsSimpleDbDomain, awsCredentialsProvider),
@@ -43,10 +45,8 @@ public class Main {
         server.run();
     }
 
-    private static Map<String, String> getSecrets(AWSCredentialsProvider credentialsProvider, String region, String secretId) {
-        AWSSecretsManagerClientBuilder managerBuilder = AWSSecretsManagerClientBuilder.standard().withCredentials(credentialsProvider);
-        managerBuilder.setRegion(region);
-        AWSSecretsManager manager = managerBuilder.build();
+    private static Map<String, String> getSecrets(AWSCredentialsProvider credentialsProvider, String secretId) {
+        AWSSecretsManager manager = AWSSecretsManagerClientBuilder.standard().withCredentials(credentialsProvider).build();
         try {
             GetSecretValueResult value = manager.getSecretValue(new GetSecretValueRequest().withSecretId(secretId));
             if (value != null) {
