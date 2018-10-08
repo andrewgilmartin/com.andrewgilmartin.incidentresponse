@@ -25,23 +25,75 @@ public class Main {
     private static final Logger logger = Logger.getLogger(Main.class);
 
     public static void main(String... args) throws Exception {
+        String slackVerificationToken = null;
+        int port = 5000;
+        String path = "/ir";
+        String awsSimpleDbDomain = null;
+        String awsSecretName = "com.andrewgilmartin.incidentresponse.config";
+        String awsCredentialsProfile = "com.andrewgilmartin.incidentresponse";
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--port":
+                    port = Integer.parseInt(args[i + 1]);
+                    i += 1;
+                    break;
+                case "--path":
+                    path = args[i + 1];
+                    i += 1;
+                    break;
+                case "--token":
+                    slackVerificationToken = args[i + 1];
+                    i += 1;
+                    break;
+                case "--domain":
+                    awsSimpleDbDomain = args[i + 1];
+                    i += 1;
+                    break;
+                case "--secret":
+                    awsSecretName = args[i + 1];
+                    i += 1;
+                    break;
+                case "--profile":
+                    awsCredentialsProfile = args[i + 1];
+                    i += 1;
+                    break;
+                default:
+                    System.err.printf(
+                            "usage: %s "
+                            + "--port http-port-number "
+                            + "--path url-path "
+                            + "--token slack-verification-token "
+                            + "--domain aws-simpledb-name "
+                            + "--profile aws-profile-name "
+                            + "--secret aws-secret-name",
+                            Main.class.getName()
+                    );
+                    System.exit(1);
+            }
+        }
 
         AWSCredentialsProvider awsCredentialsProvider = new AWSCredentialsProviderChain(
                 new EnvironmentVariableCredentialsProvider(),
-                new ProfileCredentialsProvider("com.andrewgilmartin.incidentresponse"),
+                new ProfileCredentialsProvider(awsCredentialsProfile),
                 new EC2ContainerCredentialsProviderWrapper()
         );
 
-        Map<String, String> secrets = getSecrets(awsCredentialsProvider, "com.andrewgilmartin.incidentresponse.config");
-        String slackVerificationToken = secrets.get("slack.verification-token");
-        String awsSimpleDbDomain = secrets.get("aws.simpledb.domain");
+        if (slackVerificationToken == null || awsSimpleDbDomain == null) {
+            Map<String, String> secrets = getSecrets(awsCredentialsProvider, awsSecretName);
+            if (slackVerificationToken == null) {
+                slackVerificationToken = secrets.get("slack.verification-token");
+            }
+            if (awsSimpleDbDomain == null) {
+                awsSimpleDbDomain = secrets.get("aws.simpledb.domain");
+            }
+        }
 
         IncidentResponseSlackApp slackApp = new IncidentResponseSlackApp(
                 new AwsController(awsSimpleDbDomain, awsCredentialsProvider),
                 slackVerificationToken
         );
 
-        HttpServerSlackServer server = new HttpServerSlackServer(8080, "/", slackApp);
+        HttpServerSlackServer server = new HttpServerSlackServer(port, path, slackApp);
         server.run();
     }
 

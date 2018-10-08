@@ -18,6 +18,8 @@ These use cases turned into the `/ir` slash-command
 /ir task-id [ description [ user … ] [ status ]
 
 /ir [ all | finished ] [ user … ] [ status … ]
+
+/ir help
 ```
 
 The description is text, the user (or users) is indicated with an at-name, eg “@andrew”, and the status is indicated with a bang-name, eg “!red”. The task-id is a positive integer., eg “345”.
@@ -46,32 +48,43 @@ and then run
 
 ```
 java \
-  -Dir.token=XXX \
-  -Dir.port=8080 \
-  -Dir.path=/ \
-  -jar target/incidentresponse-1.0-SNAPSHOT.jar
+   -classpath target/incidentresponse-1.0-SNAPSHOT.jar \
+   com.andrewgilmartin.incidentresponse.memory.Main \
+   --token XXX \
+   --port 8080 \
+   --path /ir 
 ```
 
 Replace XXX with your verification token Slack provides when installing a slash command, and 9090 with the port number it should listen on.
 
 ## Persistant version
 
-To run the AWS version using SimpleDB for persistance you will need 
+To run the AWS version using AWS SimpleDB for persistence and AWS Secret Manager for secrets you will need 
 
 1. An AWS account.
 2. An AWS credentials, access key id and secret. The application can access the credentials from
     * the environmental variables "AWS_ACCESS_KEY_ID" and "AWS_SECRET_ACCESS_KEY", 
     * the "$HOME/.aws/credentials" file under the "com.andrewgilmartin.incidentresponse" [profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html),
-    * or the EC2 instance.
-3. An [AWS secret](https://console.aws.amazon.com/secretsmanager/home) with name 
-"com.andrewgilmartin.incidentresponse.config" and attributes
-"slack.verification-token" containing the Slack slash command installation's verification token, and 
-"aws.simpledb.domain" containing the name of the SimpleDB database to create and use.
+    * or the AWS Elastic Beanstalk instance.
+3. An [AWS secret](https://console.aws.amazon.com/secretsmanager/home) with the name 
+"com.andrewgilmartin.incidentresponse.config" and keys ""slack.verification-token" and "aws.simpledb.domain."
+    * "slack.verification-token" contains the Slack installation's verification token. 
+    * "aws.simpledb.domain" containing the name of the SimpleDB domain to create and use.
+4. An AWS IAM policy that gives list and read access to the secret and all access to the domain.
+    * Attach this policy to the roles "aws-elasticbeanstalk-service-role" and "aws-elasticbeanstalk-ec2-role."
 
-Now run
+To run from the command line (for testing) use
 
 ```
-java ... com.andrewgilmartin.incidentresponse.aws.Main
+mvn exec:java \
+  -Dexec.mainClass="com.andrewgilmartin.incidentresponse.aws.Main" \
+  -Dexec.args="--port 8080 --path /ir"
+```
+
+To run from AWS Elastic Beanstalk create a new application and upload the file 
+
+```
+incidentresponse-1.0-SNAPSHOT-release.zip
 ```
 
 ## Excercising the application outside of Slack
@@ -79,7 +92,7 @@ java ... com.andrewgilmartin.incidentresponse.aws.Main
 ```
 curl \
     -X POST \
-    -dtoken=FOO \
+    -dtoken=XXX \
     -dchannel_id=cid \
     -dchannel_name=cname \
     -duser_id=u1 \

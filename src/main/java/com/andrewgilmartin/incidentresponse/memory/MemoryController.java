@@ -18,9 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MemoryController implements Controller {
 
-    private static final AtomicInteger ID_GENERATOR = new AtomicInteger(0);
-
     private final Map<String, Workspace> idToWorkspace = new HashMap<>();
+    private final Map<String, AtomicInteger> workspaceIdToTaskCount = new HashMap<>();
 
     private static class MemoryWorkspace extends Workspace {
 
@@ -51,7 +50,7 @@ public class MemoryController implements Controller {
     @Override
     public Task addTask(Workspace workspace, String description, User creator, Collection<User> assignments, Status status) {
         synchronized (workspace) {
-            Task task = new Task(Integer.toString(ID_GENERATOR.incrementAndGet()), description, creator, assignments, status);
+            Task task = new Task(nextTaskId(workspace), description, creator, assignments, status);
             ((MemoryWorkspace) workspace).getTasks().add(task);
             return task;
         }
@@ -110,4 +109,14 @@ public class MemoryController implements Controller {
         return new User(slackUser.getId(), slackUser.getName());
     }
 
+    private String nextTaskId(Workspace workspace) {
+        synchronized (workspaceIdToTaskCount) {
+            AtomicInteger count = workspaceIdToTaskCount.get(workspace.getId());
+            if (count == null) {
+                count = new AtomicInteger(0);
+                workspaceIdToTaskCount.put(workspace.getId(), count);
+            }
+            return Integer.toString(count.incrementAndGet());
+        }
+    }
 }

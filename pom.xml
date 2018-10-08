@@ -19,10 +19,26 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.andrewgilmartin.incidentresponse.memory.Main</mainClass>
+                            <mainClass>com.andrewgilmartin.incidentresponse.aws.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <descriptor>src/assembly/aws-ebs/assembly.xml</descriptor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -49,12 +65,6 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-secretsmanager</artifactId>
             <version>1.11.390</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-android-sdk-auth-core</artifactId>
-            <version>2.6.30</version>
-            <type>aar</type>
         </dependency>
     </dependencies>
 </project>
